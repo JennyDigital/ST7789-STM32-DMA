@@ -55,7 +55,7 @@ https://github.com/deividAlfa/ST7789-STM32-uGUI
 
 # Special thanks to
 
-###№ Helped fix the library
+#### Helped fix the library
 - [drunkbatya](https://github.com/drunkbatya)
 
 #### Reference
