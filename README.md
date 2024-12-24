@@ -19,7 +19,7 @@ Using STM32's Hardware SPI(with simple DMA support) to drive a ST7789 based LCD 
 3. Configure parameters in `"st7789.h"` according to your own display panel  
 4. In system startup, perform `ST7789_Init();`.  
 5. Run a `ST7789_Test()` to exam this driver.  
-6. Run a `ST7789_TestColors();` to test colors 
+6. Run a `ST7789_TestColors()` to test colors 
 7. Don't forget to turn the backlight on  
 
 This code has been tested on 240x240 & 170x320 LCD screens.
@@ -49,7 +49,9 @@ If you like, you could customize it's resolution to drive different displays you
 
 For more details, please refer to ST7789's datasheet.  
 
+# Powerful fork
 
+https://github.com/deividAlfa/ST7789-STM32-uGUI
 
 # Special thanks to
 
