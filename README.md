@@ -1,4 +1,15 @@
-# ST7789-STM32
+# Floyd-Fish/ST7789-STM32 fork with fixed DMA colors
+Origianl Floyd-Fish lib has a problem with color output when using DMA - colors are mixed up. The code may not compile at all with an error, or produce firmware with mixed up colors during DMA
+
+# List of changes:
+-Correct display of colors with DMA
+
+-Removed interference on the screen when turning on
+
+-Added functions for drawing using DMA
+
+
+# ST7789-STM32-DMA
 Using STM32's Hardware SPI(with simple DMA support) to drive a ST7789 based LCD display.
 
 ## How to use ?
@@ -8,11 +19,11 @@ Using STM32's Hardware SPI(with simple DMA support) to drive a ST7789 based LCD 
 3. Configure parameters in `"st7789.h"` according to your own display panel  
 4. In system startup, perform `ST7789_Init();`.  
 5. Run a `ST7789_Test()` to exam this driver.  
-6. Don't forget to turn the backlight on  
+6. Run a `ST7789_TestColors();` to test colors 
+7. Don't forget to turn the backlight on  
 
 This code has been tested on 240x240 & 170x320 LCD screens.
-
-> DMA is only useful when huge block write is performed, e.g: Fill full screen or draw a bitmap.  
+  
 > Most MCUs don't have a large enough RAM, so a framebuffer is "cut" into pieces, e.g: a 240x5 pixel buffer for a 240x240 screen.  
 
 ## SPI Interface
@@ -38,24 +49,6 @@ If you like, you could customize it's resolution to drive different displays you
 
 For more details, please refer to ST7789's datasheet.  
 
-## HAL SPI Performance
-
-- DMA Enabled
-
-With DMA enabled, cpu won't participate in the data transfer process. So filling a large size of data block is much faster.e.g. fill, drawImage. (You can see no interval between each data write)
-
-![DMA](/fig/fill_dma.png)
-
-
-- DMA Disabled
-
-Without DMA enabled, the filling process could be a suffer. As you can see, before each data byte write, an interval is inserted, so the total datarate would degrade. 
-
-![noDMA](/fig/fill_normal.png)
-
-Especially in some functions where need a little math, the cpu needs to calculate data before a write operation, so the effective datarate would be much lower.(e.g. drawLine)
-
-![line](fig/draw_line.png)
 
 
 # Special thanks to
