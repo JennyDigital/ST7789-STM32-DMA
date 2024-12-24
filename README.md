@@ -55,8 +55,8 @@ https://github.com/deividAlfa/ST7789-STM32-uGUI
 
 # Special thanks to
 
-### Helped fix the library
-- https://github.com/drunkbatya
+###№ Helped fix the library
+- [drunkbatya](https://github.com/drunkbatya)
 
 #### Reference
 - [ananevilya's Arduino-ST7789-Lib](https://github.com/ananevilya/Arduino-ST7789-Library)  
