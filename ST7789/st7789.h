@@ -1,8 +1,10 @@
+
 #ifndef __ST7789_H
 #define __ST7789_H
 
 #include "fonts.h"
 #include "main.h"
+#include <stdio.h>
 
 /* choose a Hardware SPI port to use. */
 #define ST7789_SPI_PORT hspi1
@@ -26,8 +28,8 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 #endif
 
 /* If u need Backlight control, uncomment below */
-#define BLK_PORT
-#define BLK_PIN
+#define BLK_PORT        ST7789_BL_GPIO_Port
+#define BLK_PIN         ST7789_BL_Pin
 
 
 /*
@@ -39,13 +41,14 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 
 /* Choose a type you are using */
 //#define USING_135X240
-#define USING_240X240
+//#define USING_240X240
 //#define USING_170X320
+#define USING_240X320
 
 /* Choose a display rotation you want to use: (0-3) */
 //#define ST7789_ROTATION 0
-//#define ST7789_ROTATION 1
-#define ST7789_ROTATION 2				//  use Normally on 240x240
+#define ST7789_ROTATION 1
+//#define ST7789_ROTATION 2				//  use Normally on 240x240
 //#define ST7789_ROTATION 3
 
 #ifdef USING_135X240
@@ -186,6 +189,8 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 #define DARKBLUE    0X01CF
 #define LIGHTBLUE   0X7D7C
 #define GRAYBLUE    0X5458
+#define PINK        0XFA2F
+#define PALEPINK    0xfd5a
 
 #define LIGHTGREEN  0X841F
 #define LGRAY       0XC618
@@ -259,6 +264,13 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 
+#ifdef __CROSSWORKS_ARM
+  #define NEWLINE   10
+  #define FORMFEED  12
+  #define CR        13
+#endif
+
+
 /* Basic functions. */
 void ST7789_Init(void);
 void ST7789_SetRotation(uint8_t m);
@@ -277,6 +289,13 @@ void ST7789_InvertColors(uint8_t invert);
 /* Text functions. */
 void ST7789_WriteChar(uint16_t x, uint16_t y, char ch, FontDef font, uint16_t color, uint16_t bgcolor);
 void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, uint16_t color, uint16_t bgcolor);
+
+#ifdef __CROSSWORKS_ARM
+int __putchar(int ch, __printf_tag_ptr ptr);
+void ST7789_SetPrintColours( uint16_t fg_colour, uint16_t bg_colour );
+void ST7789_SetPrintFont( FontDef chosen_font );
+void ST7789_Locate( uint8_t new_cx, uint8_t new_cy );
+#endif
 
 /* Extented Graphical functions. */
 void ST7789_DrawFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
