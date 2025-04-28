@@ -1,6 +1,14 @@
 #include "st7789.h"
 #include <stdbool.h>
 
+#ifdef __CROSSWORKS_ARM
+FontDef   curr_font;
+uint16_t  cx            = 0;
+uint16_t  cy            = 0;
+uint16_t  curr_colour   = BLACK;
+uint16_t  curr_bgcolour = WHITE;
+#endif
+
 #ifdef USE_DMA
 #include <string.h>
 uint16_t DMA_MIN_SIZE = 16;
@@ -50,13 +58,13 @@ static void ST7789_WriteData(uint8_t *buff, size_t buff_size)
 	// split data in small chunks because HAL can't send more than 64K at once
 
 	while (buff_size > 0) {
-		uint16_t chunk_size = buff_size > 65535 ? 65535 : buff_size;
+		uint16_t chunk_size = buff_size > 65534 ? 65534 : buff_size;
 		#ifdef USE_DMA
 			if (DMA_MIN_SIZE <= buff_size)
 			{
 				HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, buff, chunk_size);
 				while (ST7789_SPI_PORT.hdmatx->State != HAL_DMA_STATE_READY)
-				{}
+                                {}
 			}
 			else
 				HAL_SPI_Transmit(&ST7789_SPI_PORT, buff, chunk_size, HAL_MAX_DELAY);
@@ -208,8 +216,11 @@ void ST7789_Init(void)
   	ST7789_WriteCommand (ST7789_NORON);		//	Normal Display on
   	ST7789_WriteCommand (ST7789_DISPON);	//	Main screen turned on	
 
-	//HAL_Delay(50);
-	ST7789_Fill_Color(BLACK);				//	Fill with Black.
+	ST7789_Fill_Color(BLACK);               //	Fill with Black.
+
+#ifdef __CROSSWORKS_ARM
+        ST7789_SetPrintFont( Font_8x8 );
+#endif
 }
 
 /**
@@ -504,11 +515,11 @@ void ST7789_WriteString(uint16_t x, uint16_t y, const char *str, FontDef font, u
 				break;
 			}
 
-			if (*str == ' ') {
-				// skip spaces in the beginning of the new line
-				str++;
-				continue;
-			}
+			//if (*str == ' ') {
+			//	// skip spaces in the beginning of the new line
+			//	str++;
+			//	continue;
+			//}
 		}
 		ST7789_WriteChar(x, y, *str, font, color, bgcolor);
 		x += font.width;
@@ -1014,11 +1025,11 @@ void ST7789_WriteFastString(uint16_t x, uint16_t y, const char *str, FontDef fon
                 break;
             }
 
-            if (*str == ' ') {
-                // Skip spaces in the beginning of the new line
-                str++;
-                continue;
-            }
+            //if (*str == ' ') {
+            //    // Skip spaces in the beginning of the new line
+            //    str++;
+            //    continue;
+            //}
         }
 
         ST7789_PrepareCharBuffer(*str, font, color, bgcolor, char_buf);
@@ -1030,3 +1041,88 @@ void ST7789_WriteFastString(uint16_t x, uint16_t y, const char *str, FontDef fon
     }
     ST7789_UnSelect();
 }
+
+#ifdef __CROSSWORKS_ARM
+
+/** 
+ * @brief Adds extra support for Rowley CrossWorks for ARM. Not neccessary or desirable for everybody though.
+ * @param ch -> character to print.
+ * @return ch -> characte printed.
+ */
+int __putchar(int ch, __printf_tag_ptr ptr)
+{
+  switch( ch )
+  {
+    case FORMFEED:
+      ST7789_Fill_Color( curr_bgcolour );
+      cx = cy = 0;
+      break;
+
+    case NEWLINE:
+      cy = cy + curr_font.height;
+      break;
+
+    case CR:
+      cx = 0;
+      break;
+
+    default:
+      ST7789_WriteChar(cx, cy, ch, curr_font, curr_colour, curr_bgcolour );
+
+      cx+=curr_font.width;
+      if( cx > ( ST7789_WIDTH - curr_font.width ) )
+      {
+        cx = 0;
+        cy = cy + curr_font.height;
+        if( cy > ( cy - curr_font.height ) )
+        {
+          cy = 0;
+        }
+      }
+      break;
+  }
+
+  return ch;
+}
+
+
+/**
+ * @brief Sets the print colours as used by putchar and by extension puts an printf
+ * @param fg_colour -> Foreground colour in RGB565.
+ * @param bg_colour -> Background colour in RGB565.
+ * @return none
+ */
+void ST7789_SetPrintColours( uint16_t fg_colour, uint16_t bg_colour )
+{
+  curr_colour = fg_colour;
+  curr_bgcolour = bg_colour;
+}
+
+
+/**
+ * @brief Sets the font that putchar, puts and printf use.
+ * @param chosen_font -> The font to use.
+ * @return none
+ */ 
+void ST7789_SetPrintFont( FontDef chosen_font )
+{
+  curr_font = chosen_font;
+}
+
+
+/**
+ * @brief Sets the number of characters across and down as the new srarting position for putchar, puts and printf
+ * @param new_cx -> new character x
+ * @param new_cy -> new character y
+ * @return none
+ */
+void ST7789_Locate( uint8_t new_cx, uint8_t new_cy )
+{
+  cx = new_cx * curr_font.width;
+  cy = new_cy * curr_font.height;
+  if( cx > ( ST7789_WIDTH - curr_font.width ) ) cx = 0;
+  if( cy > ( ST7789_HEIGHT - curr_font.height ) ) cy = 0;
+}
+
+#endif
+
