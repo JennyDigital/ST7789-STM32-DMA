@@ -58,7 +58,7 @@ static void ST7789_WriteData(uint8_t *buff, size_t buff_size)
 	// split data in small chunks because HAL can't send more than 64K at once
 
 	while (buff_size > 0) {
-		uint16_t chunk_size = buff_size > 65534 ? 65534 : buff_size;
+		uint16_t chunk_size = buff_size > 65535 ? 65535 : buff_size;
 		#ifdef USE_DMA
 			if (DMA_MIN_SIZE <= buff_size)
 			{
