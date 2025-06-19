@@ -41,7 +41,8 @@ I've had a simple test, connect the screen and mcu via 20cm dupont line, and it 
 
 - 135*240   
 - 240*240   
-- 170*320 (new)  
+- 170*320 (new)
+- 240*320 (new)  
 
 If you like, you could customize it's resolution to drive different displays you prefer. 
 > For example, a 240x320 display is perfectly suited for st7789.  
