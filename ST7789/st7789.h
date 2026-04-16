@@ -2,34 +2,75 @@
 #ifndef __ST7789_H
 #define __ST7789_H
 
-#include "fonts.h"
-#include "main.h"
+#include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 
-/* choose a Hardware SPI port to use. */
-#define ST7789_SPI_PORT hspi1
-extern SPI_HandleTypeDef ST7789_SPI_PORT;
+#include "fonts.h"
 
-/* choose whether use DMA or not */
-#define USE_DMA
-
-/* If u need CS control, comment below*/
-#define CFG_NO_CS
-
-/* Pin connection*/
-#define ST7789_RST_PORT ST7789_RST_GPIO_Port
-#define ST7789_RST_PIN  ST7789_RST_Pin
-#define ST7789_DC_PORT  ST7789_DC_GPIO_Port
-#define ST7789_DC_PIN   ST7789_DC_Pin
-
-#ifndef CFG_NO_CS
-//#define ST7789_CS_PORT  ST7789_CS_GPIO_Port
-//#define ST7789_CS_PIN   ST7789_CS_Pin
+#ifdef ST7789_PORT_HEADER
+#include ST7789_PORT_HEADER
+#else
+#include "st7789_port.h"
 #endif
 
-/* If u need Backlight control, uncomment below */
-#define BLK_PORT        ST7789_BL_GPIO_Port
-#define BLK_PIN         ST7789_BL_Pin
+#if !defined(CFG_NO_CS) && !defined(ST7789_USE_CS)
+#define CFG_NO_CS
+#endif
+
+#if !defined(USING_135X240) && !defined(USING_240X240) && !defined(USING_170X320) && !defined(USING_240X320)
+#define USING_240X320
+#endif
+
+#ifndef ST7789_ROTATION
+#define ST7789_ROTATION 1
+#endif
+
+#ifndef ST7789_USE_DMA
+#define ST7789_USE_DMA 1
+#endif
+
+#ifndef ST7789_DELAY
+#error ST7789 port header must define ST7789_DELAY(ms)
+#endif
+
+#ifndef ST7789_SPI_WRITE
+#error ST7789 port header must define ST7789_SPI_WRITE(data, size)
+#endif
+
+#if ST7789_USE_DMA
+#ifndef ST7789_SPI_WRITE_DMA
+#error ST7789 port header must define ST7789_SPI_WRITE_DMA(data, size) when ST7789_USE_DMA is enabled
+#endif
+
+#ifndef ST7789_SPI_WAIT_DMA
+#error ST7789 port header must define ST7789_SPI_WAIT_DMA() when ST7789_USE_DMA is enabled
+#endif
+#endif
+
+#ifndef ST7789_RST_Clr
+#error ST7789 port header must define ST7789_RST_Clr()
+#endif
+
+#ifndef ST7789_RST_Set
+#error ST7789 port header must define ST7789_RST_Set()
+#endif
+
+#ifndef ST7789_DC_Clr
+#error ST7789 port header must define ST7789_DC_Clr()
+#endif
+
+#ifndef ST7789_DC_Set
+#error ST7789 port header must define ST7789_DC_Set()
+#endif
+
+#ifndef ST7789_Select
+#error ST7789 port header must define ST7789_Select()
+#endif
+
+#ifndef ST7789_UnSelect
+#error ST7789 port header must define ST7789_UnSelect()
+#endif
 
 
 /*
@@ -39,17 +80,9 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
  * X_SHIFT & Y_SHIFT are used to adapt different display's resolution
  */
 
-/* Choose a type you are using */
-//#define USING_135X240
-//#define USING_240X240
-//#define USING_170X320
-#define USING_240X320
-
-/* Choose a display rotation you want to use: (0-3) */
-//#define ST7789_ROTATION 0
-#define ST7789_ROTATION 1
-//#define ST7789_ROTATION 2				//  use Normally on 240x240
-//#define ST7789_ROTATION 3
+/* Choose a type you are using through compile definitions or by editing this header.
+ * Defaults to 240x320 if no geometry macro is provided.
+ */
 
 #ifdef USING_135X240
 
@@ -247,20 +280,6 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 /* Advanced options */
 #define ST7789_COLOR_MODE_16bit 0x55    //  RGB565 (16bit)
 #define ST7789_COLOR_MODE_18bit 0x66    //  RGB666 (18bit)  // Will not work correctly with this lib
-
-/* Basic operations */
-#define ST7789_RST_Clr() HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_RESET)
-#define ST7789_RST_Set() HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_SET)
-
-#define ST7789_DC_Clr() HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET)
-#define ST7789_DC_Set() HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_SET)
-#ifndef CFG_NO_CS
-#define ST7789_Select() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET)
-#define ST7789_UnSelect() HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET)
-#else
-#define ST7789_Select() asm("nop")
-#define ST7789_UnSelect() asm("nop")
-#endif
 
 #define ABS(x) ((x) > 0 ? (x) : -(x))
 

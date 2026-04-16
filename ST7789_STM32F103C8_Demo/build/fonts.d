@@ -1,2 +1,2 @@
-build/fonts.o: Core/Src/fonts.c Core/Inc/fonts.h
-Core/Inc/fonts.h:
+build/fonts.o: ../ST7789/fonts.c ../ST7789/fonts.h
+../ST7789/fonts.h:

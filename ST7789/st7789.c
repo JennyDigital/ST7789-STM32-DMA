@@ -9,7 +9,7 @@ uint16_t  curr_colour   = BLACK;
 uint16_t  curr_bgcolour = WHITE;
 #endif
 
-#ifdef USE_DMA
+#if ST7789_USE_DMA
 #include <string.h>
 uint16_t DMA_MIN_SIZE = 16;
 /* If you're using DMA, then u need a "framebuffer" to store datas to be displayed.
@@ -40,7 +40,7 @@ static void ST7789_WriteCommand(uint8_t cmd)
 {
 	ST7789_Select();
 	ST7789_DC_Clr();
-	HAL_SPI_Transmit(&ST7789_SPI_PORT, &cmd, sizeof(cmd), HAL_MAX_DELAY);
+	ST7789_SPI_WRITE(&cmd, sizeof(cmd));
 	ST7789_UnSelect();
 }
 
@@ -59,17 +59,16 @@ static void ST7789_WriteData(uint8_t *buff, size_t buff_size)
 
 	while (buff_size > 0) {
 		uint16_t chunk_size = buff_size > 65534 ? 65534 : buff_size;
-		#ifdef USE_DMA
+		#if ST7789_USE_DMA
 			if (DMA_MIN_SIZE <= buff_size)
 			{
-				HAL_SPI_Transmit_DMA(&ST7789_SPI_PORT, buff, chunk_size);
-				while (ST7789_SPI_PORT.hdmatx->State != HAL_DMA_STATE_READY)
-                                {}
+				ST7789_SPI_WRITE_DMA(buff, chunk_size);
+				ST7789_SPI_WAIT_DMA();
 			}
 			else
-				HAL_SPI_Transmit(&ST7789_SPI_PORT, buff, chunk_size, HAL_MAX_DELAY);
+				ST7789_SPI_WRITE(buff, chunk_size);
 		#else
-			HAL_SPI_Transmit(&ST7789_SPI_PORT, buff, chunk_size, HAL_MAX_DELAY);
+			ST7789_SPI_WRITE(buff, chunk_size);
 		#endif
 		buff += chunk_size;
 		buff_size -= chunk_size;
@@ -96,7 +95,7 @@ static void ST7789_WriteSmallData(uint8_t data)
 {
 	ST7789_Select();
 	ST7789_DC_Set();
-	HAL_SPI_Transmit(&ST7789_SPI_PORT, &data, sizeof(data), HAL_MAX_DELAY);
+	ST7789_SPI_WRITE(&data, sizeof(data));
 	ST7789_UnSelect();
 }
 
@@ -162,14 +161,14 @@ static void ST7789_SetAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint1
  */
 void ST7789_Init(void)
 {
-	#ifdef USE_DMA
+	#if ST7789_USE_DMA
 		memset(disp_buf, 0, sizeof(disp_buf));
 	#endif
-	HAL_Delay(10);
+	ST7789_DELAY(10);
     ST7789_RST_Clr();
-    HAL_Delay(10);
+    ST7789_DELAY(10);
     ST7789_RST_Set();
-    HAL_Delay(20);
+    ST7789_DELAY(20);
 
     ST7789_WriteCommand(ST7789_COLMOD);		//	Set color mode
     ST7789_WriteSmallData(ST7789_COLOR_MODE_16bit);
@@ -233,7 +232,7 @@ void ST7789_Fill_Color(uint16_t color) {
     ST7789_SetAddressWindow(0, 0, ST7789_WIDTH - 1, ST7789_HEIGHT - 1);
     ST7789_Select();
 
-    #ifdef USE_DMA
+	#if ST7789_USE_DMA
 
     for (i = 0; i < (ST7789_HEIGHT * ST7789_WIDTH) / (sizeof(disp_buf) / 2); i++) {
         memset_16((uint16_t*)disp_buf, color, sizeof(disp_buf) / 2); 
@@ -709,74 +708,74 @@ void ST7789_TearEffect(uint8_t tear)
 void ST7789_Test(void)
 {
 	ST7789_Fill_Color(WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 	ST7789_WriteString(10, 20, "Speed Test", Font_11x18, RED, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 	ST7789_Fill_Color(CYAN);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(RED);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(BLUE);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(GREEN);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(YELLOW);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(BROWN);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(DARKBLUE);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(MAGENTA);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(LIGHTGREEN);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(LGRAY);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(LBBLUE);
-    HAL_Delay(500);
+	ST7789_DELAY(500);
 	ST7789_Fill_Color(WHITE);
-	HAL_Delay(500);
+	ST7789_DELAY(500);
 
 	ST7789_WriteString(10, 10, "Font test.", Font_16x26, GBLUE, WHITE);
 	ST7789_WriteString(10, 50, "Hello Steve!", Font_7x10, RED, WHITE);
 	ST7789_WriteString(10, 75, "Hello Steve!", Font_11x18, YELLOW, WHITE);
 	ST7789_WriteString(10, 100, "Hello Steve!", Font_16x26, MAGENTA, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Rect./Line.", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawRectangle(30, 30, 100, 100, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Filled Rect.", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawFilledRectangle(30, 30, 50, 50, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Circle.", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawCircle(60, 60, 25, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Filled Cir.", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawFilledCircle(60, 60, 25, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Triangle", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawTriangle(30, 30, 30, 70, 60, 40, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	ST7789_Fill_Color(BLACK);
 	ST7789_WriteString(10, 10, "Filled Tri", Font_11x18, YELLOW, BLACK);
 	ST7789_DrawFilledTriangle(30, 30, 30, 70, 60, 40, WHITE);
-	HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
 	//	If FLASH cannot storage anymore datas, please delete codes below.
 	ST7789_Fill_Color(WHITE);
 	ST7789_DrawImage(0, 0, 128, 128, (uint16_t *)saber);
-	HAL_Delay(3000);
+	ST7789_DELAY(3000);
 }
 
 /** 
@@ -788,15 +787,15 @@ void ST7789_TestColors(void)
 {
     ST7789_Fill_Color(RED); 
 	ST7789_WriteString(100, 100, "RED", Font_16x26, WHITE, BLACK);
-    HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
     ST7789_Fill_Color(GREEN); 
 	ST7789_WriteString(85, 100, "GREEN", Font_16x26, WHITE, BLACK);
-    HAL_Delay(1000);
+	ST7789_DELAY(1000);
 
     ST7789_Fill_Color(BLUE); 
 	ST7789_WriteString(90, 100, "BLUE", Font_16x26, WHITE, BLACK);
-    HAL_Delay(1000);
+	ST7789_DELAY(1000);
 }
 
 /* Fast drawing with DMA */
@@ -817,7 +816,7 @@ void ST7789_DrawFastVLine(uint16_t x, uint16_t y, uint16_t h, uint16_t color)
 
     ST7789_SetAddressWindow(x, y, x, y + adjusted_height - 1);
 
-#ifdef USE_DMA
+#if ST7789_USE_DMA
     memset_16((uint16_t*)disp_buf, color, sizeof(disp_buf) / 2); // Размер в элементах
     SendBuffer((uint16_t*)disp_buf, sizeof(disp_buf) / 2);      // Размер в 16-битных словах
 #else
@@ -845,7 +844,7 @@ void ST7789_DrawFastHLine(uint16_t x, uint16_t y, uint16_t w, uint16_t color)
 
     ST7789_SetAddressWindow(x, y, x + adjusted_width - 1, y);
 
-#ifdef USE_DMA
+#if ST7789_USE_DMA
      memset_16((uint16_t*)disp_buf, color, sizeof(disp_buf) / 2); 
     SendBuffer((uint16_t*)disp_buf, sizeof(disp_buf) / 2);     
 #else
@@ -883,7 +882,7 @@ void ST7789_DrawFastFilledRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t
     ST7789_SetAddressWindow(x, y, x + w - 1, y + h - 1);
     ST7789_Select();
 
-    #ifdef USE_DMA
+	#if ST7789_USE_DMA
     /* Fill the rectangle using DMA */
     uint32_t total_pixels = w * h;
     uint32_t buffer_size = sizeof(disp_buf) / 2; // Buffer size in 16-bit pixels

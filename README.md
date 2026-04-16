@@ -10,17 +10,54 @@ Origianl Floyd-Fish lib has a problem with color output when using DMA - colors 
 
 
 # ST7789-STM32-DMA
-Using STM32's Hardware SPI(with simple DMA support) to drive a ST7789 based LCD display.
+Using Hardware SPI to drive an ST7789 based LCD display.
+
+The library still defaults to STM32 HAL, but it now has a small platform port layer so the same driver source can also be built for Raspberry Pi Pico with the Pico SDK.
+
+## Supported targets
+
+- STM32 HAL: default target, with the existing DMA path preserved
+- Raspberry Pi Pico / RP2040: optional target via Pico SDK, with SPI TX DMA support
 
 ## How to use ?
 
-1. Copy the "st7789" dir to your project src path, add it to include path   
-2. Include `"st7789.h"` in where you want to use this driver.   
-3. Configure parameters in `"st7789.h"` according to your own display panel  
-4. In system startup, perform `ST7789_Init();`.  
-5. Run a `ST7789_Test()` to exam this driver.  
-6. Run a `ST7789_TestColors()` to test colors 
-7. Don't forget to turn the backlight on  
+1. Copy the `ST7789` dir into your project and add it to the include path.
+2. Include `st7789.h` where you want to use the driver.
+3. Provide a port header for your platform.
+4. Select your display geometry and rotation with compile definitions or by editing `st7789.h`.
+5. Call `ST7789_Init();` during startup.
+6. Turn the backlight on in your board code.
+
+The driver includes `st7789_port.h` by default. To use a different platform binding, compile with:
+
+```c
+-DST7789_PORT_HEADER=\"your_port_header.h\"
+```
+
+The port header must define these macros:
+
+- `ST7789_DELAY(ms)`
+- `ST7789_SPI_WRITE(data, size)`
+- `ST7789_RST_Clr()` and `ST7789_RST_Set()`
+- `ST7789_DC_Clr()` and `ST7789_DC_Set()`
+- `ST7789_Select()` and `ST7789_UnSelect()`
+
+If `ST7789_USE_DMA` is enabled, the port header must also define:
+
+- `ST7789_SPI_WRITE_DMA(data, size)`
+- `ST7789_SPI_WAIT_DMA()`
+
+The built-in STM32 HAL port keeps DMA enabled by default. Targets that do not provide DMA should define `ST7789_USE_DMA` as `0`.
+
+## Configuration
+
+Display selection now supports compile-time overrides. If no display macro is set, the library falls back to `USING_240X320` and `ST7789_ROTATION=1`.
+
+Example:
+
+```c
+-DUSING_240X240 -DST7789_ROTATION=2
+```
 
 This code has been tested on 240x240 & 170x320 LCD screens.
   
@@ -49,6 +86,41 @@ If you like, you could customize it's resolution to drive different displays you
 > Just set all X_SHIFT and Y_SHIFT to 0, and set resolution to 240|320.  
 
 For more details, please refer to ST7789's datasheet.  
+
+## STM32 demo
+
+`ST7789_STM32F103C8_Demo` now builds directly against the shared files in `ST7789/`, so the STM32 example and the reusable library stay in sync.
+
+## Raspberry Pi Pico demo
+
+`ST7789_RP2040_Pico_Demo` is a Pico SDK example that builds the shared driver with `st7789_pico_port.h` and `st7789_pico_port.c`.
+
+Default wiring in that demo:
+
+- SPI0 SCK: GP18
+- SPI0 MOSI: GP19
+- CS: GP17
+- DC: GP20
+- RST: GP21
+- BL: GP22
+
+Default display settings in that demo:
+
+- `USING_240X240`
+- `ST7789_ROTATION=2`
+- `ST7789_USE_DMA=1`
+
+Build steps:
+
+```sh
+cd ST7789_RP2040_Pico_Demo
+mkdir -p build
+cd build
+cmake .. -DPICO_SDK_PATH=/path/to/pico-sdk
+cmake --build .
+```
+
+The Pico port now uses an RP2040 DMA channel for larger SPI transfers and falls back to blocking writes for small transfers, matching the shared driver's existing DMA threshold logic. The demo's `st7789_pico_port_init()` helper configures SPI, GPIO, backlight, and the DMA channel setup used by the transport layer.
 
 # Powerful fork
 
